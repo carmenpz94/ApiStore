@@ -25,6 +25,7 @@ namespace ApiStore.DTOs
         public string EstadoPedido { get; set; } = null!;
 
         public int UserId { get; set; }
+        public int ClienteId { get; set; }
 
         //public virtual User User { get; set; } = null!;
 
