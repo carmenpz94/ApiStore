@@ -21,6 +21,8 @@
 
     public class ProductRequest
     {
+        public int ProductId;
+
         //public int Id { get; set; }
 
         public string Nombre { get; set; } = null!;
@@ -36,5 +38,6 @@
         public string? Imagen { get; set; }
 
         public virtual CategoryRequest Categoria { get; set; } = null!;
+        public int Id { get; set; }
     }
 }
