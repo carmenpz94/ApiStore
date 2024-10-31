@@ -52,8 +52,15 @@ namespace ApiStore.Endponits
                     "/",
                     async (UserRequest user, IUserServices userServices) =>
                     {
-                        var createdUserId = await userServices.PostUser(user);
-                        return Results.Created($"api/users/{createdUserId}", user);
+                        try
+                        {
+                            var createdUserId = await userServices.PostUser(user);
+                            return Results.Created($"api/users/{createdUserId}", user);
+                        }
+                        catch (Exception)
+                        {
+                            return Results.Conflict("EL NOMBRE DE USUARIO YA ESTÁ EN USO.");
+                        }
                     }
                 )
                 .WithOpenApi(o => new OpenApiOperation(o)
