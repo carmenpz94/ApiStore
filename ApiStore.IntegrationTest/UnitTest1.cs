@@ -10,13 +10,14 @@ namespace ApiStore.IntegrationTest
         [TestMethod]
         public async Task TestMethod1()
         {
-            // Crear instancia de la aplicaci�n en memoria
+            // Crear instancia de la aplicación en memoria
             using var application = new WebApplicationFactory<Program>();
 
             // Crear cliente HTTP para enviar solicitudes
             using var _httpClient = application.CreateClient();
+          
+            var userSession = new UserRequest { Username = "usuario1", Userpassword = "contraseña123" };
 
-            var userSession = new UserRequest { Username = "carmen", Userpassword = "carmen" };
             var response = await _httpClient.PostAsJsonAsync("api/users/login", userSession);
             if (response.IsSuccessStatusCode)
             {
