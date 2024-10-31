@@ -107,7 +107,7 @@ public partial class OnlineShopContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Users__3213E83FF6058C2D");
-            entity.HasIndex(e => e.UserRole, "UQ__Users__2A586E0B39B0322E").IsUnique();
+            entity.HasIndex(e => e.UserRole, "UQ__Users__2A586E0B39B0322E");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Username)

@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 using ApiStore.DTOs;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace ApiStore.IntegrationTest
 {
     [TestClass]
-    public class OrderDetailEndpointsTests
+    public class UserEndpointsTest
     {
         private static HttpClient _httpClient;
         private static WebApplicationFactory<Program> _factory;
@@ -21,6 +16,7 @@ namespace ApiStore.IntegrationTest
         /// <summary>
         /// Configurar entorno de prueba inicializando la API y obteniendo el token JWT
         /// </summary>
+
         [ClassInitialize]
         public static async Task ClassInit(TestContext context)
         {
@@ -31,7 +27,11 @@ namespace ApiStore.IntegrationTest
             _httpClient = _factory.CreateClient();
 
             // Arrange: Preparar la carga útil para el inicio de sesión
-            var loginRequest = new UserRequest { Username = "erickz", Userpassword = "1234" };
+            var loginRequest = new UserRequest
+            {
+                Username = "usuario1",
+                Userpassword = "contraseña123",
+            };
 
             // Act: Enviar la solicitud de inicio de sesión
             var loginResponse = await _httpClient.PostAsJsonAsync("api/users/login", loginRequest);
@@ -51,104 +51,112 @@ namespace ApiStore.IntegrationTest
         }
 
         [TestMethod]
-        public async Task ObtenerOrderDetails_ConTokenValido_RetornaListaDeOrderDetails()
+        public async Task ObtenerUsuarios_ConTokenValido_RetornaListaDeUsuarios()
         {
             // Arrange: Pasar autorización a la cabecera
             AgregarTokenAlaCabecera();
 
             // Act: Realizar solicitud para obtener los detalles de ordenes
-            var orderDetails = await _httpClient.GetFromJsonAsync<List<OrderDetailResponse>>(
-                "/api/orderDetails"
-            );
+            var orderDetails = await _httpClient.GetFromJsonAsync<List<UserResponse>>("api/users");
 
             // Assert: Verificar que la lista de detalle de ordenes no sea nula y que tenga elementos
-            Assert.IsNotNull(orderDetails, "La lista de detalle de ordenes no debería ser nula.");
+            Assert.IsNotNull(orderDetails, "La lista de USUARIOS no debería ser nula.");
             Assert.IsTrue(
                 orderDetails.Count > 0,
-                "La lista de detalle de ordenes debería contener al menos un elemento."
+                "La lista de usuarios debería contener al menos un elemento."
             );
         }
 
         [TestMethod]
-        public async Task ObtenerOrderDetailsPorId_OrderDetailsExistente_OrderDetails()
+        public async Task ObtenerUsuariosPorId_UsuariosExistente_RetornarUsuarios()
         {
             // Arrange: Pasar autorización a la cabecera y establecer ID de detalle de orden existente
             AgregarTokenAlaCabecera();
-            var id = 4;
+            var UserId = 1;
 
             // Act: Realizar solicitud para obtener detalle de ordenes por ID
-            var orderDetail = await _httpClient.GetFromJsonAsync<OrderDetailResponse>(
-                $"/api/orderDetails/{id}"
-            );
+            var user = await _httpClient.GetFromJsonAsync<UserResponse>($"api/users/{UserId}");
 
             // Assert: Verificar que el detalle de orden no sea nulo y que tenga el ID correcto
-            Assert.IsNotNull(orderDetail, "El detalle de órdenes no debería ser nulo.");
-            Assert.AreEqual(
-                id,
-                orderDetail?.Id,
-                "El ID del detalle de órdenes devuelto no coincide."
-            );
+            Assert.IsNotNull(user, "El USUARIO no debería ser nulo.");
+            Assert.AreEqual(UserId, user.Id, "El ID del usuarios devuelto no coincide.");
         }
 
         [TestMethod]
-        public async Task GuardarOrderDerails_ConDatosValidos_RetornaCreated()
+        public async Task GuardarUsuarios_ConDatosValidos_RetornarCreated()
         {
-            // Arrange: Pasar autorización a la cabecera y preparar el nuevo detalle de ordenes
+            // Arrange: Pasar autorización a la cabecera y preparar el nuevo usuario
             AgregarTokenAlaCabecera();
-            var newOrderDetail = new OrderDetailRequest
+
+            var newUser = new UserRequest
             {
-                Cantidad = 2,
-                Precio = 5,
-                OrderId = 1,
-                ProductId = 2,
+                Username = "ChrisVilla2",
+                Userpassword = "ChrisVilla2",
+                UserRole = "Administrador2",
             };
-            // Act: Realizar solicitud para guardar el detalle de ordenes
-            var response = await _httpClient.PostAsJsonAsync("api/orderDetails", newOrderDetail);
-            // Assert: Verifica el código de estado Created
+
+            // Act: Realizar solicitud para guardar nuevo usuario
+            var response = await _httpClient.PostAsJsonAsync("api/users", newUser);
+
+            // Assert: Verificar el código y estado será Created
+            Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task GuardarUsuario_UsernameDuplicado_RetornaConflict()
+        {
+            // Arrange: Pasar autorización a la cabecera y preparar el usuario duplicado
+            AgregarTokenAlaCabecera();
+
+            var newUser = new UserRequest
+            {
+                Username = "ChrisVilla2",
+                Userpassword = "ChrisVilla2",
+                UserRole = "Administrador2",
+            };
+
+            // Act: Realizar solicitud para guardar el usuario con nombre de usuario duplicado
+            var response = await _httpClient.PostAsJsonAsync("api/users", newUser);
+
+            // Assert: Verifica el código de estado Conflict
             Assert.AreEqual(
-                HttpStatusCode.Created,
+                HttpStatusCode.Conflict,
                 response.StatusCode,
-                "El detalle de ordenes no se creó correctamente"
+                "Se esperaba un conflicto al intentar crear usuario duplicado"
             );
         }
 
         [TestMethod]
-        public async Task ModificarOrderDetail_OrderDetailExistente_RetornaOk()
+        public async Task ModificarUsuario_UsuarioExistente_Retornar()
         {
-            // Arrange: Pasar autorización a la cabecera y preparar el detalle de ordenes modificado, pasando un ID
             AgregarTokenAlaCabecera();
-            var existingOrderDetail = new OrderDetailRequest
+
+            //ARRANGE: PASAR AUTORIZACIÓN A LA CABECERA Y PREPARAR EL USUARIO MODIFICADO
+            var existingUser = new UserRequest
             {
-                Cantidad = 5,
-                Precio = 12,
-                OrderId = 1,
-                ProductId = 2,
+                Username = "usuario1",
+                Userpassword = "contraseña123",
+                UserRole = "Cliente",
             };
-            var id = 5;
+            var userId = 1;
 
-            // Act: Realizar solicitud para modificar detalle de ordenes existente
-            var response = await _httpClient.PutAsJsonAsync(
-                $"/api/orderDetails/{id}",
-                existingOrderDetail
-            );
+            var response = await _httpClient.PutAsJsonAsync($"api/users/{userId}", existingUser);
 
-            // Assert: Verifica que la respuesta se OK
             Assert.AreEqual(
                 HttpStatusCode.OK,
                 response.StatusCode,
-                "El detalle de ordenes no se modificó correctamente"
+                "EL USUARIO SE MODIFICO CORRECTAMENTE"
             );
         }
 
         [TestMethod]
-        public async Task EliminarOrderDetail_OrderDetailExistente_RetornaNoContent()
+        public async Task EliminarUsuario_UserExistente_RetornaNoContent()
         {
             // Arrange: Pasar autorización a la cabecera, pasando un ID
             AgregarTokenAlaCabecera();
-            var id = 8;
+            var userId = 45;
 
-            // Act: Realizar solicitud para eliminar detalle de ordenes existente
-            var response = await _httpClient.DeleteAsync($"/api/orderDetails/{id}");
+            var response = await _httpClient.DeleteAsync($"api/users/{userId}");
 
             // Assert: Verifica que la respuesta se NoContent
             Assert.AreEqual(
@@ -159,20 +167,20 @@ namespace ApiStore.IntegrationTest
         }
 
         [TestMethod]
-        public async Task EliminarOrderDetail_OrderDetailNoExistente_RetornaNotFound()
+        public async Task EliminarUsuario_UsuarioNoExistente_RetornaNotFound()
         {
             // Arrange: Pasar autorización a la cabecera, pasando un ID
             AgregarTokenAlaCabecera();
-            var id = 2;
+            var UserId = 3;
 
             // Act: Realizar solicitud para eliminar detalle de ordenes existente
-            var response = await _httpClient.DeleteAsync($"/api/orderDetails/{id}");
+            var response = await _httpClient.DeleteAsync($"api/users/{UserId}");
 
             // Assert: Verifica que la respuesta es NotFound
             Assert.AreEqual(
                 HttpStatusCode.NotFound,
                 response.StatusCode,
-                "Se esperaba un 404 NotFound al intentar eliminar un detalle de ordene existente inexistente."
+                "Se esperaba un 404 NotFound al intentar eliminar un usuario existente inexistente."
             );
         }
     }
